@@ -1,7 +1,7 @@
 library(dada2)
 
 # Set your working directory
-setwd("~/Documents/Bioinformatics_scripts/R_scripts/VTK_2021/demonstration/")
+setwd("~/Documents/Bioinformatics_scripts/R_scripts/VTK_2021/")
 
 
 ### ### ### ### ### 
@@ -25,9 +25,9 @@ cat("Processing",length(sample.names),"samples:", sample.names)
 plotQualityProfile(fnFs[1:3])
 plotQualityProfile(fnRs[1:3])
 
-### ### ### ### ### ### 
-### Filter and trim ### 
-### ### ### ### ### ### 
+### ### ### ### ### ### ### ### 
+### step 1. Filter and trim ### 
+### ### ### ### ### ### ### ### 
 
 cat("Filtering and trimming")
 # Place filtered files in filtered/ subdirectory
@@ -40,40 +40,42 @@ out <- filterAndTrim(fnFs, filtFs, fnRs, filtRs, truncLen=c(250,200),maxN=0, max
 head(out) # shows first 10 lines of output
 
 
-### ### ### ### ### 
-### Dereplicate ### 
-### ### ### ### ### 
+### ### ### ### ### ### ### 
+### step 2. Dereplicate ### 
+### ### ### ### ### ### ### 
 derepF1 <- derepFastq(filtFs, verbose=TRUE)
 derepR1 <- derepFastq(filtRs, verbose=TRUE)
 
 
-### ### ### ### ### ### 
-### Learn error rates ### 
-### ### ### ### ### ### 
+### ### ### ### ### ### ### ### ###
+### step 3. Learn error rates ### 
+### ### ### ### ### ### ### ### ###
 
 cat("Learning error rates")
 errF <- learnErrors(derepF1, multithread=TRUE)
 errR <- learnErrors(derepR1, multithread=TRUE)
 
 
-### ### ### ### ### ### 
-### Sample inference ### 
-### ### ### ### ### ### 
+### ### ### ### ### ### ### ### 
+### step 4. Sample inference ### 
+### ### ### ### ### ### ### ### 
 
 #apply the core sample inference algorithm to the filtered and trimmed sequence data.
 dadaFs <- dada(derepF1, err=errF, multithread=TRUE,pool = F)
 dadaRs <- dada(derepR1, err=errR, multithread=TRUE,pool = F)
 #Inspecting the returned dada-class object:
+#dadaFs[[1]]
 
-### ### ### ### ### ### ### 
-### Merge paired reads ### 
-### ### ### ### ### ### ### 
+
+### ### ### ### ### ### ### ### ### 
+### step 5. Merge paired reads ### 
+### ### ### ### ### ### ### ### ### 
 mergers <- mergePairs(dadaFs, derepF1, dadaRs, derepR1, verbose=TRUE)
 
 
-### ### ### ### ### ### ### ###
-### Contructuct sequence table ### 
-### ### ### ### ### ### ### ###
+### ### ### ### ### ### ### ### ### ###
+### step 6. Construct sequence table ### 
+### ### ### ### ### ### ### ### ### ###
 seqtab <- makeSequenceTable(mergers)
 dim(seqtab)
 
@@ -81,9 +83,9 @@ dim(seqtab)
 table(nchar(getSequences(seqtab)))
 
 
-### ### ### ### ### ### ### 
-### Remove chimeras ### 
-### ### ### ### ### ### ### 
+### ### ### ### ### ### ### ### 
+### step 7. Remove chimeras ### 
+### ### ### ### ### ### ### ### 
 seqtab.nochim <- removeBimeraDenovo(seqtab, method="consensus", multithread=TRUE, verbose=TRUE)
 dim(seqtab.nochim) # how many non chimeric ASVs 
 
@@ -101,13 +103,13 @@ colnames(track) <- c("input", "filtered", "denoisedF", "denoisedR", "merged", "n
 rownames(track) <- sample.names
 head(track)
 
-### ### ### ### ### ###
-### Assign taxonomy ### 
-### ### ### ### ### ### 
+### ### ### ### ### ### ### ### 
+### step 8. Assign taxonomy ### 
+### ### ### ### ### ### ### ### 
 
 taxa <- assignTaxonomy(seqtab.nochim, "../Input_files/silva_nr_v138_train_set.fa", multithread=TRUE)
 ##optional: make species level assignments based on exact matching
-taxa <- addSpecies(taxa, "../Input_files/Input_files/silva_species_assignment_v138.fa")
+taxa <- addSpecies(taxa, "../Input_files/silva_species_assignment_v138.fa")
 
 #inspect the taxonomic assignments:
 taxa.print <- taxa # Removing sequence rownames for display only

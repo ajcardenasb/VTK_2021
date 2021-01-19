@@ -1,27 +1,34 @@
 library(dada2)
-#setwd("~/Documents/Bioinformatics_scripts/R_scripts/RSS_16S/ASVs/dada2/")
+
+# Set your working directory
+setwd("~/Documents/Bioinformatics_scripts/R_scripts/VTK_2021/demonstration/")
+
+
 ### ### ### ### ### 
 ### Read files  ### 
 ### ### ### ### ###  
+
 cat("Reading files")
 path <- "."
-list.files(path)
+list.files(path) # prints file names
+
 # Forward and reverse fastq filenames have format: SAMPLENAME_R1_001.fastq and SAMPLENAME_R2_001.fastq
 fnFs <- sort(list.files(path, pattern="_R1_001.fastq", full.names = TRUE))
 fnRs <- sort(list.files(path, pattern="_R2_001.fastq", full.names = TRUE))
-# Extract sample names, assuming filenames have format: SAMPLENAME_XXX.fastq
-sample.names <- sapply(strsplit(basename(fnFs), "_"), `[`, 1)
+
+sample.names <- sapply(strsplit(basename(fnFs), "_"), `[`, 1) # Extract sample names, assuming filenames have format: SAMPLENAME_XXX.fastq
 
 cat("Processing",length(sample.names),"samples:", sample.names)
 
 
 #Inspect read quality profiles
-#plotQualityProfile(fnFs[1:2])
-#plotQualityProfile(fnRs[1:2])
+plotQualityProfile(fnFs[1:3])
+plotQualityProfile(fnRs[1:3])
 
 ### ### ### ### ### ### 
 ### Filter and trim ### 
 ### ### ### ### ### ### 
+
 cat("Filtering and trimming")
 # Place filtered files in filtered/ subdirectory
 filtFs <- file.path(path, "filtered", paste0(sample.names, "_F_filt.fastq.gz"))
@@ -29,40 +36,44 @@ filtRs <- file.path(path, "filtered", paste0(sample.names, "_R_filt.fastq.gz"))
 names(filtFs) <- sample.names
 names(filtRs) <- sample.names
 ### set parameters  maxN=0 (DADA2 requires no Ns), truncQ=2, rm.phix=TRUE and maxEE=2. The maxEE parameter sets the maximum number of “expected errors” allowed in a read, which is a better filter than simply averaging quality scores.
-out <- filterAndTrim(fnFs, filtFs, fnRs, filtRs, truncLen=c(220,190),maxN=0, maxEE=c(2,2), truncQ=2, rm.phix=TRUE, compress=TRUE, multithread=TRUE) 
-head(out)
+out <- filterAndTrim(fnFs, filtFs, fnRs, filtRs, truncLen=c(250,200),maxN=0, maxEE=c(2,2), truncQ=2, rm.phix=TRUE, compress=TRUE, multithread=TRUE) 
+head(out) # shows first 10 lines of output
+
+
+### ### ### ### ### 
+### Dereplicate ### 
+### ### ### ### ### 
+derepF1 <- derepFastq(filtFs, verbose=TRUE)
+derepR1 <- derepFastq(filtRs, verbose=TRUE)
+
 
 ### ### ### ### ### ### 
 ### Learn error rates ### 
 ### ### ### ### ### ### 
 
 cat("Learning error rates")
-errF <- learnErrors(filtFs, multithread=TRUE)
-errR <- learnErrors(filtRs, multithread=TRUE)
+errF <- learnErrors(derepF1, multithread=TRUE)
+errR <- learnErrors(derepR1, multithread=TRUE)
+
 
 ### ### ### ### ### ### 
 ### Sample inference ### 
 ### ### ### ### ### ### 
 
 #apply the core sample inference algorithm to the filtered and trimmed sequence data.
-dadaFs <- dada(filtFs, err=errF, multithread=TRUE)
-dadaRs <- dada(filtRs, err=errR, multithread=TRUE)
+dadaFs <- dada(derepF1, err=errF, multithread=TRUE,pool = F)
+dadaRs <- dada(derepR1, err=errR, multithread=TRUE,pool = F)
 #Inspecting the returned dada-class object:
-dadaFs[[1]]
-
 
 ### ### ### ### ### ### ### 
 ### Merge paired reads ### 
 ### ### ### ### ### ### ### 
-mergers <- mergePairs(dadaFs, filtFs, dadaRs, filtRs, verbose=TRUE)
-# Inspect the merger data.frame from the first sample
-head(mergers[[1]])
+mergers <- mergePairs(dadaFs, derepF1, dadaRs, derepR1, verbose=TRUE)
 
 
-### ### ### ### ### ### ### 
-### Contructuct ASV table ### 
-### ### ### ### ### ### ### 
-
+### ### ### ### ### ### ### ###
+### Contructuct sequence table ### 
+### ### ### ### ### ### ### ###
 seqtab <- makeSequenceTable(mergers)
 dim(seqtab)
 
@@ -73,9 +84,8 @@ table(nchar(getSequences(seqtab)))
 ### ### ### ### ### ### ### 
 ### Remove chimeras ### 
 ### ### ### ### ### ### ### 
-
 seqtab.nochim <- removeBimeraDenovo(seqtab, method="consensus", multithread=TRUE, verbose=TRUE)
-dim(seqtab.nochim)
+dim(seqtab.nochim) # how many non chimeric ASVs 
 
 ## calculate the  frequency of chimeric sequences 
 sum(seqtab.nochim)/sum(seqtab)
@@ -95,11 +105,10 @@ head(track)
 ### Assign taxonomy ### 
 ### ### ### ### ### ### 
 
-taxa <- assignTaxonomy(seqtab.nochim, "/share/databases/SILVA_for_dada2/silva_nr_v132_train_set.fa.gz", multithread=TRUE)
-#taxa <- assignTaxonomy(seqtab.nochim, "~/Downloads/silva_nr_v132_train_set.fa", multithread=TRUE)
+taxa <- assignTaxonomy(seqtab.nochim, "../Input_files/silva_nr_v138_train_set.fa", multithread=TRUE)
 ##optional: make species level assignments based on exact matching
-taxa <- addSpecies(taxa, "/share/databases/SILVA_for_dada2/silva_species_assignment_v132.fa.gz")
-#taxa <- addSpecies(taxa, "~/Downloads/silva_species_assignment_v132.fa")
+taxa <- addSpecies(taxa, "../Input_files/Input_files/silva_species_assignment_v138.fa")
+
 #inspect the taxonomic assignments:
 taxa.print <- taxa # Removing sequence rownames for display only
 rownames(taxa.print) <- NULL
@@ -119,6 +128,5 @@ colnames(asv.2)[1]="Sequence"
 asv.3=asv.2[,c(2:ncol(asv.2),1)]
 asv.final=asv.3[order(-asv.3$sum),]
 rownames(asv.final) = sprintf("ASV%04d", 1:nrow(asv.final))
-write.table(asv.final, "VTK_ASV_table.txt",  quote = FALSE)
-write.table(track, "VTK_ASV_stats.txt", quote = FALSE)
-
+write.table(asv.final, "../Input_files/VTK2021_table.txt",  quote = FALSE)
+write.table(track, "../Input_files/VTK2021_ASV_stats.txt", quote = FALSE)

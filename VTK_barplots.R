@@ -36,6 +36,6 @@ P10=c("#669900","#99cc33","#ccee66","#006699","#3399cc","#990066","#cc3399","#ff
 ggplot() +geom_bar(aes(y = Abundance, x = Genotype, fill = Family), data = all.l, stat="identity", position = "fill") +  scale_y_continuous(labels = percent_format(), expand = c(0, 0)) +theme_classic()+ theme(axis.text.x=element_text(angle=90,hjust=1), legend.position = "right",  plot.title = element_text(hjust = 0.5), panel.spacing = unit(1.5, "lines")) + labs( y= "Percentage of 16S rRNA sequences", x="Host colony") + scale_fill_manual(values=P10) + facet_grid(Temperature ~.) + labs(title="short-term heat stress")  
 #dev.off() 
 
-### Now plot the 10 most abundant genera
+### Assignment 1: plot the 10 most abundant genera
 
-
+### Assignment 2: plot the 10 most abundant ASVs (advanced)

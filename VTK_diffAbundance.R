@@ -1,398 +1,115 @@
-library(ALDEx2)
+library(ANCOMBC)
+library(phyloseq)
 library(reshape2)
-library(gplots)
-library(data.table)
-library(eulerr)
-library(gridExtra)
+library(ggplot2)
+library(compositions)
+library(pheatmap)
+library(dplyr)
+setwd("~/Documents/Bioinformatics_scripts/R_scripts/VTK_2021/")
+
+asv=read.table("Input_files/VTK2021_ASV_table.txt", header = TRUE, row.names = 1)[,1:20]
+map=read.table("Input_files/VTK_metadata.txt", header = T, row.names = 1, sep = "\t")
+map$Temperature2=paste(map$Temperature, "ºC", sep = "")
+tax=read.table("Input_files/VTK2021_ASV_table.txt", header = TRUE, row.names = 1)[,22:27]
+colnames(asv)=gsub("\\.", "-", colnames(asv))
+
+otu.t= otu_table(asv, taxa_are_rows=TRUE)
+sam.t= sample_data(data.frame(map))
+tax.t= tax_table(as.matrix(tax))
+
+phy.all= phyloseq(otu.t, tax.t,  sam.t)
+
+#27 vs 29
+C1=subset_samples(phy.all, Temperature %in% c("27", "29"))
+res1=ancombc(phyloseq=C1,formula="Temperature",p_adj_method = "fdr",zero_cut = 0.9,lib_cut=1000,group = "Temperature",struc_zero =TRUE,neg_lb = FALSE,tol = 1e-05,max_iter = 100,conserve = F,alpha = 0.05,global = TRUE)
+res1_df=data.frame(Beta=res1[["res"]][["beta"]], Beta_se=res1[["res"]][["se"]], W=res1[["res"]][["W"]],pval=res1[["res"]][["p_val"]], qval=res1[["res"]][["q_val"]],DA=res1[["res"]][["diff_abn"]])
+colnames(res1_df)=c(	"Beta",	"se", "W",	"pval",	"qval", "Diff_abundant")
+res1_sig=subset(res1_df, Diff_abundant == "TRUE")#[,c(1,2,6,8,10)]
+res1_sig$Diff_more_abundant=ifelse( res1_sig$W < 0 , "27", "29")
+res1_sig$Taxa=paste(rownames(tax), " (",tax$Genus,";", tax$Family, ";",tax$Order, ") " , sep = "" )[match(rownames(res1_sig),rownames(tax))]
+res1_sig$Comparison="Comparison 1: 27 vs 29"
+message("Number of DA ASVs: ", nrow(res1_sig), "\nNumber of DA ASVs enriched in 27: ", nrow(subset(res1_sig, Diff_more_abundant == "27" )), "\nNumber of DA ASVs enriched in 29: ", nrow(subset(res1_sig, Diff_more_abundant == "29" )))
+
+#27 vs 32
+C2=subset_samples(phy.all, Temperature %in% c("27", "32"))
+res2=ancombc(phyloseq=C2,formula="Temperature",p_adj_method = "fdr",zero_cut = 0.9,lib_cut=1000,group = "Temperature",struc_zero =TRUE,neg_lb = FALSE,tol = 1e-05,max_iter = 100,conserve = F,alpha = 0.05,global = TRUE)
+res2_df=data.frame(Beta=res2[["res"]][["beta"]], Beta_se=res2[["res"]][["se"]], W=res2[["res"]][["W"]],pval=res2[["res"]][["p_val"]], qval=res2[["res"]][["q_val"]],DA=res2[["res"]][["diff_abn"]])
+colnames(res2_df)=c(	"Beta",	"se", "W",	"pval",	"qval", "Diff_abundant")
+res2_sig=subset(res2_df, Diff_abundant == "TRUE")#[,c(1,2,6,8,10)]
+res2_sig$Diff_more_abundant=ifelse( res2_sig$W < 0 , "27", "32")
+res2_sig$Taxa=paste(rownames(tax), " (",tax$Genus,";", tax$Family, ";",tax$Order, ") " , sep = "" )[match(rownames(res2_sig),rownames(tax))]
+res2_sig$Comparison="Comparison 2: 27 vs 32"
+message("Number of DA ASVs: ", nrow(res2_sig), "\nNumber of DA ASVs enriched in 27: ", nrow(subset(res2_sig, Diff_more_abundant == "27" )), "\nNumber of DA ASVs enriched in 32: ", nrow(subset(res2_sig, Diff_more_abundant == "32" )))
+
+#27 vs 34
+C3=subset_samples(phy.all, Temperature %in% c("27", "34"))
+res3=ancombc(phyloseq=C3,formula="Temperature",p_adj_method = "fdr",zero_cut = 0.9,lib_cut=1000,group = "Temperature",struc_zero =TRUE,neg_lb = FALSE,tol = 1e-05,max_iter = 100,conserve = F,alpha = 0.05,global = TRUE)
+res3_df=data.frame(Beta=res3[["res"]][["beta"]], Beta_se=res3[["res"]][["se"]], W=res3[["res"]][["W"]],pval=res3[["res"]][["p_val"]], qval=res3[["res"]][["q_val"]],DA=res3[["res"]][["diff_abn"]])
+colnames(res3_df)=c(	"Beta",	"se", "W",	"pval",	"qval", "Diff_abundant")
+res3_sig=subset(res3_df, Diff_abundant == "TRUE")#[,c(1,2,6,8,10)]
+res3_sig$Diff_more_abundant=ifelse( res3_sig$W < 0 , "27", "34")
+res3_sig$Taxa=paste(rownames(tax), " (",tax$Genus,";", tax$Family, ";",tax$Order, ") " , sep = "" )[match(rownames(res3_sig),rownames(tax))]
+res3_sig$Comparison="Comparison 3: 27 vs 34"
+message("Number of DA ASVs: ", nrow(res3_sig), "\nNumber of DA ASVs enriched in 27: ", nrow(subset(res3_sig, Diff_more_abundant == "27" )), "\nNumber of DA ASVs enriched in 34: ", nrow(subset(res3_sig, Diff_more_abundant == "34" )))
+
+#29 vs 32
+C4=subset_samples(phy.all, Temperature %in% c("29", "32"))
+res4=ancombc(phyloseq=C4,formula="Temperature",p_adj_method = "fdr",zero_cut = 0.9,lib_cut=1000,group = "Temperature",struc_zero =TRUE,neg_lb = FALSE,tol = 1e-05,max_iter = 100,conserve = F,alpha = 0.05,global = TRUE)
+res4_df=data.frame(Beta=res4[["res"]][["beta"]], Beta_se=res4[["res"]][["se"]], W=res4[["res"]][["W"]],pval=res4[["res"]][["p_val"]], qval=res4[["res"]][["q_val"]],DA=res4[["res"]][["diff_abn"]])
+colnames(res4_df)=c(	"Beta",	"se", "W",	"pval",	"qval", "Diff_abundant")
+res4_sig=subset(res4_df, Diff_abundant == "TRUE")#[,c(1,2,6,8,10)]
+res4_sig$Diff_more_abundant=ifelse( res4_sig$W < 0 , "29", "32")
+res4_sig$Taxa=paste(rownames(tax), " (",tax$Genus,";", tax$Family, ";",tax$Order, ") " , sep = "" )[match(rownames(res4_sig),rownames(tax))]
+res4_sig$Comparison="Comparison 4: 29 vs 32"
+message("Number of DA ASVs: ", nrow(res4_sig), "\nNumber of DA ASVs enriched in 29: ", nrow(subset(res4_sig, Diff_more_abundant == "29" )), "\nNumber of DA ASVs enriched in 32: ", nrow(subset(res4_sig, Diff_more_abundant == "32" )))
+
+#29 vs 34
+C5=subset_samples(phy.all, Temperature %in% c("29", "34"))
+res5=ancombc(phyloseq=C5,formula="Temperature",p_adj_method = "fdr",zero_cut = 0.9,lib_cut=1000,group = "Temperature",struc_zero =TRUE,neg_lb = FALSE,tol = 1e-05,max_iter = 100,conserve = F,alpha = 0.05,global = TRUE)
+res5_df=data.frame(Beta=res5[["res"]][["beta"]], Beta_se=res5[["res"]][["se"]], W=res5[["res"]][["W"]],pval=res5[["res"]][["p_val"]], qval=res5[["res"]][["q_val"]],DA=res5[["res"]][["diff_abn"]])
+colnames(res5_df)=c(	"Beta",	"se", "W",	"pval",	"qval", "Diff_abundant")
+res5_sig=subset(res5_df, Diff_abundant == "TRUE")#[,c(1,2,6,8,10)]
+res5_sig$Diff_more_abundant=ifelse( res5_sig$W < 0 , "29", "34")
+res5_sig$Taxa=paste(rownames(tax), " (",tax$Genus,";", tax$Family, ";",tax$Order, ") " , sep = "" )[match(rownames(res5_sig),rownames(tax))]
+res5_sig$Comparison="Comparison 5: 29 vs 34"
+message("Number of DA ASVs: ", nrow(res5_sig), "\nNumber of DA ASVs enriched in 29: ", nrow(subset(res5_sig, Diff_more_abundant == "29" )), "\nNumber of DA ASVs enriched in 34: ", nrow(subset(res5_sig, Diff_more_abundant == "34" )))
+
+#32 vs 34
+C6=subset_samples(phy.all, Temperature %in% c("32", "34"))
+res6=ancombc(phyloseq=C6,formula="Temperature",p_adj_method = "fdr",zero_cut = 0.9,lib_cut=1000,group = "Temperature",struc_zero =TRUE,neg_lb = FALSE,tol = 1e-05,max_iter = 100,conserve = F,alpha = 0.05,global = TRUE)
+res6_df=data.frame(Beta=res6[["res"]][["beta"]], Beta_se=res6[["res"]][["se"]], W=res6[["res"]][["W"]],pval=res6[["res"]][["p_val"]], qval=res6[["res"]][["q_val"]],DA=res6[["res"]][["diff_abn"]])
+colnames(res6_df)=c(	"Beta",	"se", "W",	"pval",	"qval", "Diff_abundant")
+res6_sig=subset(res6_df, Diff_abundant == "TRUE")#[,c(1,2,6,8,10)]
+res6_sig$Diff_more_abundant=ifelse( res6_sig$W < 0 , "32", "34")
+res6_sig$Taxa=paste(rownames(tax), " (",tax$Genus,";", tax$Family, ";",tax$Order, ") " , sep = "" )[match(rownames(res6_sig),rownames(tax))]
+res6_sig$Comparison="Comparison 6: 32 vs 34"
+message("Number of DA ASVs: ", nrow(res6_sig), "\nNumber of DA ASVs enriched in 32: ", nrow(subset(res6_sig, Diff_more_abundant == "32" )), "\nNumber of DA ASVs enriched in 34: ", nrow(subset(res6_sig, Diff_more_abundant == "34" )))
+
+## plots
+
+ANCOMresults=rbind(res1_sig,res2_sig,res3_sig ,res4_sig,res5_sig,res6_sig)
+#write.table(ANCOMresults,  "outputs/ANCOMBC_ASVs_results.txt", sep = "\t", quote = F, row.names = T )
+
+ANCOMresults_plot=ANCOMresults %>% group_by(Diff_more_abundant, Comparison) %>% tally()
+ANCOMresults_plot$n=ifelse(ANCOMresults_plot$Comparison == "Comparison 1: 27 vs 29" & ANCOMresults_plot$Diff_more_abundant == "27", ANCOMresults_plot$n*-1, ANCOMresults_plot$n*1)
+ANCOMresults_plot$n=ifelse(ANCOMresults_plot$Comparison == "Comparison 2: 27 vs 32" & ANCOMresults_plot$Diff_more_abundant == "27", ANCOMresults_plot$n*-1, ANCOMresults_plot$n*1)
+ANCOMresults_plot$n=ifelse(ANCOMresults_plot$Comparison == "Comparison 3: 27 vs 34" & ANCOMresults_plot$Diff_more_abundant == "27", ANCOMresults_plot$n*-1, ANCOMresults_plot$n*1)
+ANCOMresults_plot$n=ifelse(ANCOMresults_plot$Comparison == "Comparison 4: 29 vs 32" & ANCOMresults_plot$Diff_more_abundant == "29", ANCOMresults_plot$n*-1, ANCOMresults_plot$n*1)
+ANCOMresults_plot$n=ifelse(ANCOMresults_plot$Comparison == "Comparison 5: 29 vs 34" & ANCOMresults_plot$Diff_more_abundant == "29", ANCOMresults_plot$n*-1, ANCOMresults_plot$n*1)
+ANCOMresults_plot$n=ifelse(ANCOMresults_plot$Comparison == "Comparison 6: 32 vs 34" & ANCOMresults_plot$Diff_more_abundant == "32", ANCOMresults_plot$n*-1, ANCOMresults_plot$n*1)
+
+#pdf("./outputs/ANCOMBC_DA_barplots.pdf", width=6,height=4, pointsize = 12)
+ggplot(data=ANCOMresults_plot, aes(x=Comparison, y=n)) + geom_bar(stat="identity", position = "dodge")  + geom_text(aes(label=n), vjust=0.5, color="white", position = position_dodge(1), size=3) +  theme_classic() + theme(axis.text.x=element_text(angle=90,hjust=1)) 
+#dev.off()
+
+#heat maps
+ANCOMresults_subset=subset(ANCOMresults, abs(W) > 5)
+asv_clr=apply(asv,2,clr)
+asv_clr_subset=subset(asv_clr, rownames(asv_clr) %in% rownames(ANCOMresults_subset))
+colnames(asv_clr_subset)=paste(map$Temperature, map$Genotype, sep = "_")[match(colnames(asv_clr_subset), rownames(map))]
+asv_clr_sorted=asv_clr_subset[,c(1:5,16:20,6:10,11:15)]
+labels=paste(rownames(tax), tax$Genus,tax$Family,tax$Order, sep = " | ")[match(rownames(asv_clr_sorted),rownames(tax))]
+#pdf("outputs/ANCOM_heatmap.pdf", width = 7, height = 10, pointsize = 12)
+pheatmap(asv_clr_sorted, color = colorRampPalette(c("navy", "white", "firebrick3"))(50),  cellwidth = 7, labels_row = labels, cellheight =  5, fontsize_row = 5, fontsize_col= 8, legend = T, gaps_col = c(5,10,15),  cluster_rows = T,cluster_col = F, scale = "row", clustering_method = "centroid")#ward.D2", "single", "complete", "average" (= UPGMA), "mcquitty" (= WPGMA), "median" (= WPGMC) or "centroid" (= UPGMC).
+#dev.off()
 
-#https://bioconductor.org/packages/release/bioc/vignettes/ALDEx2/inst/doc/ALDEx2_vignette.pdf
-
-###################################################
-#####Identifying Differentially abundant OTUs #####
-###################################################
-setwd("/Users/anny/Documents/Bioinformatics_scripts/R_scripts/RSS_16S/")
-
-#read in OTU table generated in mothur
-otu = read.table("./inputFiles/RSS_OTU_table.txt")  # columns are samples and OTUs are rows, #needs to be based on relative abundances
-colnames(otu )=gsub("\\.", "-", colnames(otu ))
-met =read.table(file ="inputFiles/RSS_metadata.txt", header=TRUE, row.names = 1)
-tax=read.table(file ="inputFiles/RSS.final.taxonomy", header=TRUE, row.names = 1)
-tax$Taxonomy = gsub("\\(.*?\\)", "", tax$Taxonomy) 
-tax$Taxonomy = gsub("[a-z]__", "", tax$Taxonomy) 
-tax[c('Kingdom', 'Phylum', 'Class', 'Order', 'Family', 'Genus', 'Species')] <- colsplit(tax$Taxonomy,';',c('Kingdom', 'Phylum', 'Class', 'Order', 'Family', 'Genus', 'Species'))
-tax=tax[, -c(3)]
-
-
-
-###########################################################################################################################################
-###`Comparisons based on 4 points ##### T1 vs T2 acute, T1 vs T2 chronic, intercepts acute and chronic, comparint T1 across experimetns ###
-###########################################################################################################################################
-
-#######################################
-##### 27-T1 vs 29|32|34 T1 acute #####
-######################################
-
-#27 T1 vs 29 T1
-otu.29.t1.ac=otu[grepl("CB-T1-27|CB-T1-29", names(otu))]
-met.29.t1.ac=as.character(subset(met, rownames(met) %like% "CB-T1-27|CB-T1-29")$Temperature)
-ald.29.t1.ac = aldex(otu.29.t1.ac, met.29.t1.ac, mc.samples=128, test="t", effect=TRUE,include.sample.summary=FALSE, denom="all", verbose=FALSE)
-res.29.t1.ac=subset(ald.29.t1.ac , ald.29.t1.ac$we.ep < 0.05 )[,c(2,3,8)]
-colnames(res.29.t1.ac)[2]="rab.win.t2"
-res.29.t1.ac$Taxa=paste(tax$Family, tax$Genus, sep = "-")[match(rownames(res.29.t1.ac), rownames(tax))]
-res.29.t1.ac$comparison="29-T1-acute"
-res.29.t1.ac$OTU=rownames(res.29.t1.ac)
-
-#27 T1 vs 32 T1 
-otu.32.t1.ac=otu[grepl("CB-T1-27|CB-T1-32", names(otu))]
-met.32.t1.ac=as.character(subset(met, rownames(met) %like% "CB-T1-27|CB-T1-32")$Temperature)
-ald.32.t1.ac = aldex(otu.32.t1.ac, met.32.t1.ac, mc.samples=128, test="t", effect=TRUE,include.sample.summary=FALSE, denom="all", verbose=FALSE)
-res.32.t1.ac=subset(ald.32.t1.ac , ald.32.t1.ac$we.ep < 0.05 )[,c(2,3,8)]
-res.32.t1.ac$comparison="32-T1-acute"
-colnames(res.32.t1.ac)[2]="rab.win.t2"
-res.32.t1.ac$Taxa=paste(tax$Family, tax$Genus, sep = "-")[match(rownames(res.32.t1.ac), rownames(tax))]
-res.32.t1.ac$OTU=rownames(res.32.t1.ac)
-
-#27 T1 vs 34 T1 
-otu.34.t1.ac=otu[grepl("CB-T1-27|CB-T1-34", names(otu))]
-met.34.t1.ac=as.character(subset(met, rownames(met) %like% "CB-T1-27|CB-T1-34")$Temperature)
-ald.34.t1.ac = aldex(otu.34.t1.ac, met.34.t1.ac, mc.samples=128, test="t", effect=TRUE,include.sample.summary=FALSE, denom="all", verbose=FALSE)
-res.34.t1.ac=subset(ald.34.t1.ac , ald.34.t1.ac$we.ep < 0.05 )[,c(2,3,8)]
-res.34.t1.ac$comparison="34-T1-acute"
-colnames(res.34.t1.ac)[2]="rab.win.t2"
-res.34.t1.ac$Taxa=paste(tax$Family, tax$Genus, sep = "-")[match(rownames(res.34.t1.ac), rownames(tax))]
-res.34.t1.ac$OTU=rownames(res.34.t1.ac)
-
-#######################################
-##### 27-T2 vs 29|32|34 T2 acute #####
-#######################################
-
-#27 T2 vs 29 T2
-otu.29.t2.ac=otu[grepl("CB-T3-27|CB-T3-29", names(otu))]
-met.29.t2.ac=as.character(subset(met, rownames(met) %like% "CB-T3-27|CB-T3-29")$Temperature)
-ald.29.t2.ac = aldex(otu.29.t2.ac, met.29.t2.ac, mc.samples=128, test="t", effect=TRUE,include.sample.summary=FALSE, denom="all", verbose=FALSE)
-res.29.t2.ac=subset(ald.29.t2.ac , ald.29.t2.ac$we.ep < 0.05 )[,c(2,3,8)]
-res.29.t2.ac$comparison="29-T2-acute"
-colnames(res.29.t2.ac)[2]="rab.win.t2"
-res.29.t2.ac$Taxa=paste(tax$Family, tax$Genus, sep = "-")[match(rownames(res.29.t2.ac), rownames(tax))]
-res.29.t2.ac$OTU=rownames(res.29.t2.ac)
-
-#27 T2 vs 32 T2
-otu.32.t2.ac=otu[grepl("CB-T3-27|CB-T3-32", names(otu))]
-met.32.t2.ac=as.character(subset(met, rownames(met) %like% "CB-T3-27|CB-T3-32")$Temperature)
-ald.32.t2.ac = aldex(otu.32.t2.ac, met.32.t2.ac, mc.samples=128, test="t", effect=TRUE,include.sample.summary=FALSE, denom="all", verbose=FALSE)
-res.32.t2.ac=subset(ald.32.t2.ac , ald.32.t2.ac$we.ep < 0.05 )[,c(2,3,8)]
-res.32.t2.ac$comparison="32-T2-acute"
-colnames(res.32.t2.ac)[2]="rab.win.t2"
-res.32.t2.ac$Taxa=paste(tax$Family, tax$Genus, sep = "-")[match(rownames(res.32.t2.ac), rownames(tax))]
-res.32.t2.ac$OTU=rownames(res.32.t2.ac)
-
-#27 T2 vs 34 T2
-otu.34.t2.ac=otu[grepl("CB-T3-27|CB-T3-34", names(otu))]
-met.34.t2.ac=as.character(subset(met, rownames(met) %like% "CB-T3-27|CB-T3-34")$Temperature)
-ald.34.t2.ac = aldex(otu.34.t2.ac, met.34.t2.ac, mc.samples=128, test="t", effect=TRUE,include.sample.summary=FALSE, denom="all", verbose=FALSE)
-res.34.t2.ac=subset(ald.34.t2.ac , ald.34.t2.ac$we.ep < 0.05 )[,c(2,3,8)]
-res.34.t2.ac$comparison="34-T2-acute"
-colnames(res.34.t2.ac)[2]="rab.win.t2"
-res.34.t2.ac$Taxa=paste(tax$Family, tax$Genus, sep = "-")[match(rownames(res.34.t2.ac), rownames(tax))]
-res.34.t2.ac$OTU=rownames(res.34.t2.ac)
-
-########################################
-#####  27-T1 vs 29|32|34 T1 chronic #####
-########################################
-
-#27 T1 vs 29 T1
-otu.29.t1.ch=otu[grepl("RSS-T1-27|RSS-T1-29", names(otu))]
-met.29.t1.ch=as.character(subset(met, rownames(met) %like% "RSS-T1-27|RSS-T1-29")$Temperature)
-ald.29.t1.ch = aldex(otu.29.t1.ch, met.29.t1.ch, mc.samples=128, test="t", effect=TRUE,include.sample.summary=FALSE, denom="all", verbose=FALSE)
-res.29.t1.ch=subset(ald.29.t1.ch , ald.29.t1.ch$we.ep < 0.05 )[,c(2,3,8)]
-res.29.t1.ch$comparison="29-T1-chronic"
-colnames(res.29.t1.ch)[2]="rab.win.t2"
-res.29.t1.ch$Taxa=paste(tax$Family, tax$Genus, sep = "-")[match(rownames(res.29.t1.ch), rownames(tax))]
-res.29.t1.ch$OTU=rownames(res.29.t1.ch)
-
-#27 T1 vs 32 T1 
-otu.32.t1.ch=otu[grepl("RSS-T1-27|RSS-T1-32", names(otu))]
-met.32.t1.ch=as.character(subset(met, rownames(met) %like% "RSS-T1-27|RSS-T1-32")$Temperature)
-ald.32.t1.ch = aldex(otu.32.t1.ch, met.32.t1.ch, mc.samples=128, test="t", effect=TRUE,include.sample.summary=FALSE, denom="all", verbose=FALSE)
-res.32.t1.ch=subset(ald.32.t1.ch , ald.32.t1.ch$we.ep < 0.05 )[,c(2,3,8)]
-res.32.t1.ch$comparison="32-T1-chronic"
-colnames(res.32.t1.ch)[2]="rab.win.t2"
-res.32.t1.ch$Taxa=paste(tax$Family, tax$Genus, sep = "-")[match(rownames(res.32.t1.ch), rownames(tax))]
-res.32.t1.ch$OTU=rownames(res.32.t1.ch)
-
-#27 T1 vs 34 T1 
-otu.34.t1.ch=otu[grepl("RSS-T1-27|RSS-T1-34", names(otu))]
-met.34.t1.ch=as.character(subset(met, rownames(met) %like% "RSS-T1-27|RSS-T1-34")$Temperature)
-ald.34.t1.ch = aldex(otu.34.t1.ch, met.34.t1.ch, mc.samples=128, test="t", effect=TRUE,include.sample.summary=FALSE, denom="all", verbose=FALSE)
-res.34.t1.ch=subset(ald.34.t1.ch , ald.34.t1.ch$we.ep < 0.05 )[,c(2,3,8)]
-res.34.t1.ch$comparison="34-T1-chronic"
-colnames(res.34.t1.ch)[2]="rab.win.t2"
-res.34.t1.ch$Taxa=paste(tax$Family, tax$Genus, sep = "-")[match(rownames(res.34.t1.ch), rownames(tax))]
-res.34.t1.ch$OTU=rownames(res.34.t1.ch)
-
-#######################################
-##### 27-T2 vs 29|32|34 T2 chronic #####
-#######################################
-
-#27 T2 vs 29 T2
-otu.29.t2.ch=otu[grepl("RSS-T3-27|RSS-T3-29", names(otu))]
-met.29.t2.ch=as.character(subset(met, rownames(met) %like% "RSS-T3-27|RSS-T3-29")$Temperature)
-ald.29.t2.ch = aldex(otu.29.t2.ch, met.29.t2.ch, mc.samples=128, test="t", effect=TRUE,include.sample.summary=FALSE, denom="all", verbose=FALSE)
-res.29.t2.ch=subset(ald.29.t2.ch , ald.29.t2.ch$we.ep < 0.05 )[,c(2,3,8)]
-res.29.t2.ch$comparison="29-T2-chronic"
-colnames(res.29.t2.ch)[2]="rab.win.t2"
-res.29.t2.ch$Taxa=paste(tax$Family, tax$Genus, sep = "-")[match(rownames(res.29.t2.ch), rownames(tax))]
-res.29.t2.ch$OTU=rownames(res.29.t2.ch)
-
-ALD=rbind(res.29.t1.ac,res.32.t1.ac,res.34.t1.ac,res.29.t2.ac,res.32.t2.ac, res.34.t2.ac, res.29.t1.ch, res.32.t1.ch, res.34.t1.ch,res.29.t2.ch)
-
-ALD$sorting=gsub("Otu", "",rownames(ALD))
-ALD$sorting=gsub("(?<![0-9])0+", "",ALD$sorting,  perl = TRUE)
-write.table(ALD, "./output_tables/ALDEx2_OTU_DAOs.txt", quote = FALSE, sep = "\t", col.names = FALSE)
-
-
-########################
-##### intersects  #####
-########################
-
-#################################################
-##### point 1 = 27-T1 vs 29|32|34 T1 acute #####
-#################################################
-
-# comparing T1 and T2 in 29 
-message("Present in T1 and T2 (not resilient) in 29ºC : ", length(intersect(rownames(res.29.t1.ac), rownames(res.29.t2.ac))), " OTUs")
-intersect(rownames(res.29.t1.ac), rownames(res.29.t2.ac))
-comp1=intersect(rownames(res.29.t1.ac), rownames(res.29.t2.ac))
-print(subset(tax,rownames(tax) %in% comp1)$Genus)
-
-message("Present only in T1 (resilient) in 29ºC : ", length(setdiff(rownames(res.29.t1.ac),rownames(res.29.t2.ac))), " OTUs")
-setdiff(rownames(res.29.t1.ac),rownames(res.29.t2.ac))
-comp1=setdiff(rownames(res.29.t1.ac),rownames(res.29.t2.ac))
-print(subset(tax,rownames(tax) %in% comp1)$Genus)
-
-
-message("Present only in T2 (resilient) in 29ºC : ", length(setdiff(rownames(res.29.t2.ac),rownames(res.29.t1.ac))), " OTUs")
-setdiff(rownames(res.29.t2.ac),rownames(res.29.t1.ac))
-comp1=setdiff(rownames(res.29.t2.ac),rownames(res.29.t1.ac))
-print(subset(tax,rownames(tax) %in% comp1)$Genus)
-
-# comparing T1 and T2 in 32
-message("Present in T1 and T2 (not resilient) in 32ºC : ", length(intersect(rownames(res.32.t1.ac), rownames(res.32.t2.ac))), " OTUs")
-print(intersect(rownames(res.32.t1.ac), rownames(res.32.t2.ac)))
-comp1=intersect(rownames(res.32.t1.ac), rownames(res.32.t2.ac))
-print(subset(tax,rownames(tax) %in% comp1)$Genus)
-
-message("Present only in T1 (resilient) in 32ºC : ", length(setdiff(rownames(res.32.t1.ac),rownames(res.32.t2.ac))), " OTUs")
-setdiff(rownames(res.32.t1.ac),rownames(res.32.t2.ac))
-comp1=setdiff(rownames(res.32.t1.ac),rownames(res.32.t2.ac))
-print(subset(tax,rownames(tax) %in% comp1)$Genus)
-
-message("Present only in T2 (resilient) in 32ºC : ", length(setdiff(rownames(res.32.t2.ac),rownames(res.32.t1.ac))), " OTUs")
-setdiff(rownames(res.32.t2.ac),rownames(res.32.t1.ac))
-comp1=setdiff(rownames(res.32.t2.ac),rownames(res.32.t1.ac))
-print(subset(tax,rownames(tax) %in% comp1)$Genus)
-
-# comparing T1 and T2 in 34
-message("Present in T1 and T2 (not resilient) in 34ºC : ", length(intersect(rownames(res.34.t1.ac), rownames(res.34.t2.ac))), " OTUs")
-intersect(rownames(res.34.t1.ac), rownames(res.34.t2.ac))
-comp1=intersect(rownames(res.34.t1.ac), rownames(res.34.t2.ac))
-print(subset(tax,rownames(tax) %in% comp1)$Genus)
-
-message("Present only in T1 (resilient) in 34ºC : ", length(setdiff(rownames(res.34.t1.ac),rownames(res.34.t2.ac))), " OTUs")
-setdiff(rownames(res.34.t1.ac),rownames(res.34.t2.ac))
-comp1=setdiff(rownames(res.34.t1.ac),rownames(res.34.t2.ac))
-print(subset(tax,rownames(tax) %in% comp1)$Genus)
-
-message("Present only in T2 (resilient) in 34ºC : ", length(setdiff(rownames(res.34.t2.ac),rownames(res.34.t1.ac))), " OTUs")
-setdiff(rownames(res.34.t2.ac),rownames(res.34.t1.ac))
-comp1=setdiff(rownames(res.34.t2.ac),rownames(res.34.t1.ac))
-print(subset(tax,rownames(tax) %in% comp1)$Genus)
-
-
-
-#################################################
-##### point 2 = 27-T1 vs 29|32|34 T1 chronic #####
-#################################################
-
-# comparing T1 and T2 in 29 
-message("Present in T1 and T2 (not resilient) in 29ºC : ", length(intersect(rownames(res.29.t1.ch), rownames(res.29.t2.ch))), " OTUs")
-intersect(rownames(res.29.t1.ch), rownames(res.29.t2.ch))
-comp1=intersect(rownames(res.29.t1.ch), rownames(res.29.t2.ch))
-print(subset(tax,rownames(tax) %in% comp1)$Genus)
-
-message("Present only in T1 (resilient) in 29ºC : ", length(setdiff(rownames(res.29.t1.ch),rownames(res.29.t2.ch))), " OTUs")
-setdiff(rownames(res.29.t1.ch),rownames(res.29.t2.ch))
-comp1=setdiff(rownames(res.29.t1.ch),rownames(res.29.t2.ch))
-print(subset(tax,rownames(tax) %in% comp1)$Genus)
-
-message("Present only in T2 (resilient) in 29ºC : ", length(setdiff(rownames(res.29.t2.ch),rownames(res.29.t1.ch))), " OTUs")
-setdiff(rownames(res.29.t2.ch),rownames(res.29.t1.ch))
-comp1=setdiff(rownames(res.29.t2.ch),rownames(res.29.t1.ch))
-print(subset(tax,rownames(tax) %in% comp1)$Genus)
-
-
-
-##############################################################################
-##### point 3 = common DAF present only in T1 between acute and chronic #####
-#############################################################################
-
-### 29
-message("Present only in T1 at 29ºC in acute: ", length(setdiff(rownames(res.29.t1.ac),rownames(res.29.t2.ac))), " OTUs")
-setdiff(rownames(res.29.t1.ac),rownames(res.29.t2.ac))
-comp1=setdiff(rownames(res.29.t1.ac),rownames(res.29.t2.ac))
-print(subset(tax,rownames(tax) %in% comp1)$Genus)
-
-message("Present only in T1 at 29ºC in chronic: ", length(setdiff(rownames(res.29.t1.ch),rownames(res.29.t2.ch))), " OTUs")
-setdiff(rownames(res.29.t1.ch),rownames(res.29.t2.ch))
-comp1=setdiff(rownames(res.29.t1.ch),rownames(res.29.t2.ch))
-print(subset(tax,rownames(tax) %in% comp1)$Genus)
-
-intersect(setdiff(rownames(res.29.t1.ac),rownames(res.29.t2.ac)), setdiff(rownames(res.29.t1.ch),rownames(res.29.t2.ch)))
-
-
-
-### 32 and 34 cant' be done as there are not T2 samples  in chronic
-
-#######################################################################################
-##### point 4 = DAF 27-T1 vs 29|32|34-T1 acute | DAF 27-T1 vs 29|32|34 T1 chronic #####
-#######################################################################################
-
-
-# common DAF between (27-T1 vs 29-T1) acute and (27-T1 vs 29-T1) chronic
-message("Present in T1 acute and T1 chronic at 29ºC: ", length(intersect(rownames(res.29.t1.ac), rownames(res.29.t1.ch))), " OTUs")
-intersect(rownames(res.29.t1.ac), rownames(res.29.t1.ch))
-comp1=intersect(rownames(res.29.t1.ac), rownames(res.29.t1.ch))
-print(subset(tax,rownames(tax) %in% comp1)$Genus)
-
-message("Present ony in T1 acute at 29ºC: ", length(setdiff(rownames(res.29.t1.ac),rownames(res.29.t1.ch))), " OTUs")
-setdiff(rownames(res.29.t1.ac),rownames(res.29.t1.ch))
-comp1=setdiff(rownames(res.29.t1.ac),rownames(res.29.t1.ch))
-print(subset(tax,rownames(tax) %in% comp1)$Genus)
-
-message("Present ony in T1 chronic at 29ºC: ", length(setdiff(rownames(res.29.t1.ch),rownames(res.29.t1.ac))), " OTUs")
-setdiff(rownames(res.29.t1.ch),rownames(res.29.t1.ac))
-comp1=setdiff(rownames(res.29.t1.ch),rownames(res.29.t1.ac))
-print(subset(tax,rownames(tax) %in% comp1)$Genus)
-
-# common DAF between (27-T1 vs 32-T1) acute and (27-T1 vs 32-T1) chronic
-message("Present in T1 acute and T1 chronic at 32ºC: ", length(intersect(rownames(res.32.t1.ac), rownames(res.32.t1.ch))), " OTUs")
-intersect(rownames(res.32.t1.ac), rownames(res.32.t1.ch))
-comp1=intersect(rownames(res.32.t1.ac), rownames(res.32.t1.ch))
-print(subset(tax,rownames(tax) %in% comp1)$Genus)
-
-message("Present ony in T1 acute at 32ºC: ", length(setdiff(rownames(res.32.t1.ac),rownames(res.32.t1.ch))), " OTUs")
-setdiff(rownames(res.32.t1.ac),rownames(res.32.t1.ch))
-comp1=setdiff(rownames(res.32.t1.ac),rownames(res.32.t1.ch))
-print(subset(tax,rownames(tax) %in% comp1)$Genus)
-
-message("Present ony in T1 chronic at 32ºC: ", length(setdiff(rownames(res.32.t1.ch),rownames(res.32.t1.ac))), " OTUs")
-setdiff(rownames(res.32.t1.ch),rownames(res.32.t1.ac))
-comp1=setdiff(rownames(res.32.t1.ch),rownames(res.32.t1.ac))
-print(subset(tax,rownames(tax) %in% comp1)$Genus)
-
-# common DAF between (27-T1 vs 34-T1) acute and (27-T1 vs 34-T1) chronic
-message("Present in T1 acute and T1 chronic at 34ºC: ", length(intersect(rownames(res.34.t1.ac), rownames(res.34.t1.ch))), " OTUs")
-intersect(rownames(res.34.t1.ac), rownames(res.34.t1.ch))
-comp1=intersect(rownames(res.34.t1.ac), rownames(res.34.t1.ch))
-print(subset(tax,rownames(tax) %in% comp1)$Genus)
-
-message("Present ony in T1 acute at 34ºC: ", length(setdiff(rownames(res.34.t1.ac),rownames(res.34.t1.ch))), " OTUs")
-setdiff(rownames(res.34.t1.ac),rownames(res.34.t1.ch))
-comp1=setdiff(rownames(res.34.t1.ac),rownames(res.34.t1.ch))
-print(subset(tax,rownames(tax) %in% comp1)$Genus)
-
-message("Present ony in T1 chronic at 34ºC: ", length(setdiff(rownames(res.34.t1.ch),rownames(res.34.t1.ac))), " OTUs")
-setdiff(rownames(res.34.t1.ch),rownames(res.34.t1.ac))
-comp1=setdiff(rownames(res.34.t1.ch),rownames(res.34.t1.ac))
-print(subset(tax,rownames(tax) %in% comp1)$Genus)
-
-
-
-
-################################################################################################################################################################################################################################################################################################
-############################################################# from saved output   #############################################################################################################################################################################################################
-################################################################################################################################################################################################################################################################################################
-
-setwd("/Users/anny/Documents/Bioinformatics_scripts/R_scripts/RSS_16S/")
-res_ALD=read.table("./output_tables/ALDEx2_OTU_DAOs.txt",sep = "\t", row.names = 1)
-colnames(res_ALD)=c("clr_control",	"clr_treatment"	, "p_value",	"Taxa"	,"Comparison", "OTU")
-#swapping mislabeled samples 32 to 34 in CBASS
-res_ALD$Comparison=ifelse(res_ALD$Comparison == "32-T2-acute", "temp-T2-acute", ifelse(res_ALD$Comparison == "34-T2-acute", "32-T2-acute", as.character(res_ALD$Comparison)))
-res_ALD$Comparison=ifelse(res_ALD$Comparison == "temp-T2-acute", "34-T2-acute",  as.character(res_ALD$Comparison))
-
-########################
-##### intersects  #####
-########################
-
-#################################################
-##### point 1 = 27-T1 vs 29|32|34 T1 acute #####
-#################################################
-
-## 29
-cat("Present in T1 and T2 (not resilient) in 29ºC : ","\n", intersect(subset(res_ALD, Comparison == "29-T1-acute")$OTU, subset(res_ALD, Comparison == "29-T2-acute")$OTU))
-cat("Present only in T1 (resilient) in 29ºC : ","\n", setdiff(subset(res_ALD, Comparison == "29-T1-acute")$OTU, subset(res_ALD, Comparison == "29-T2-acute")$OTU))
-cat("Present only in T2 (recovery DAF) in 29ºC : ","\n",setdiff(subset(res_ALD, Comparison == "29-T2-acute")$OTU, subset(res_ALD, Comparison == "29-T1-acute")$OTU))
-
-#32
-cat("Present in T1 and T2 (not resilient) in 32ºC : ","\n", intersect(subset(res_ALD, Comparison == "32-T1-acute")$OTU, subset(res_ALD, Comparison == "32-T2-acute")$OTU))
-cat("Present only in T1 (resilient) in 32ºC : ","\n", setdiff(subset(res_ALD, Comparison == "32-T1-acute")$OTU, subset(res_ALD, Comparison == "32-T2-acute")$OTU))
-cat("Present only in T2 (recovery DAF) in 32ºC : ","\n",setdiff(subset(res_ALD, Comparison == "32-T2-acute")$OTU, subset(res_ALD, Comparison == "32-T1-acute")$OTU))
-
-#34
-cat("Present in T1 and T2 (not resilient) in 34ºC : ","\n", intersect(subset(res_ALD, Comparison == "34-T1-acute")$OTU, subset(res_ALD, Comparison == "34-T2-acute")$OTU))
-cat("Present only in T1 (resilient) in 34ºC : ","\n", setdiff(subset(res_ALD, Comparison == "34-T1-acute")$OTU, subset(res_ALD, Comparison == "34-T2-acute")$OTU))
-cat("Present only in T2 (recovery DAF) in 34ºC : ","\n",setdiff(subset(res_ALD, Comparison == "34-T2-acute")$OTU, subset(res_ALD, Comparison == "34-T1-acute")$OTU))
-
-
-
-#################################################
-##### point 2 = 27-T1 vs 29|32|34 T1 chronic #####
-#################################################
-
-
-## 29
-cat("Present in T1 and T2 (not resilient) in 29ºC : ","\n", intersect(subset(res_ALD, Comparison == "29-T1-chronic")$OTU, subset(res_ALD, Comparison == "29-T2-chronic")$OTU))
-cat("Present only in T1 (resilient) in 29ºC : ","\n", setdiff(subset(res_ALD, Comparison == "29-T1-chronic")$OTU, subset(res_ALD, Comparison == "29-T2-chronic")$OTU))
-cat("Present only in T2 (recovery DAF) in 29ºC : ","\n",setdiff(subset(res_ALD, Comparison == "29-T2-chronic")$OTU, subset(res_ALD, Comparison == "29-T1-chronic")$OTU))
-
-#32
-cat("Present in T1 and T2 (not resilient) in 32ºC : ","\n", intersect(subset(res_ALD, Comparison == "32-T1-chronic")$OTU, subset(res_ALD, Comparison == "32-T2-chronic")$OTU))
-cat("Present only in T1 (resilient) in 32ºC : ","\n", setdiff(subset(res_ALD, Comparison == "32-T1-chronic")$OTU, subset(res_ALD, Comparison == "32-T2-chronic")$OTU))
-cat("Present only in T2 (recovery DAF) in 32ºC : ","\n",setdiff(subset(res_ALD, Comparison == "32-T2-chronic")$OTU, subset(res_ALD, Comparison == "32-T1-chronic")$OTU))
-
-#34
-cat("Present in T1 and T2 (not resilient) in 34ºC : ","\n", intersect(subset(res_ALD, Comparison == "34-T1-chronic")$OTU, subset(res_ALD, Comparison == "34-T2-chronic")$OTU))
-cat("Present only in T1 (resilient) in 34ºC : ","\n", setdiff(subset(res_ALD, Comparison == "34-T1-chronic")$OTU, subset(res_ALD, Comparison == "34-T2-chronic")$OTU))
-cat("Present only in T2 (recovery DAF) in 34ºC : ","\n",setdiff(subset(res_ALD, Comparison == "34-T2-chronic")$OTU, subset(res_ALD, Comparison == "34-T1-chronic")$OTU))
-
-
-
-##############################################################################
-##### point 3 = common DAF present only in T1 between acute and chronic #####
-#############################################################################
-
-### 29
-cat("Present in only in T1 acute at 29ºC : ","\n", setdiff(subset(res_ALD, Comparison == "29-T1-acute")$OTU, subset(res_ALD, Comparison == "29-T1-chronic")$OTU))
-cat("Present in only in T1 chronic at 29ºC : ","\n", setdiff(subset(res_ALD, Comparison == "29-T1-chronic")$OTU, subset(res_ALD, Comparison == "29-T1-acute")$OTU))
-cat("Present in T1 in both at 29ºC : ","\n", intersect(subset(res_ALD, Comparison == "29-T1-chronic")$OTU, subset(res_ALD, Comparison == "29-T1-acute")$OTU))
-
-### 32 and 34 cant' be done as there are not T2 samples  in chronic
-
-#######################################################################################
-##### point 4 = DAF 27-T1 vs 29|32|34-T1 acute | DAF 27-T1 vs 29|32|34 T1 chronic #####
-#######################################################################################
-
-### 29
-cat("Present in T1 acute and chronic at 29ºC : ","\n", intersect(subset(res_ALD, Comparison == "29-T1-acute")$OTU, subset(res_ALD, Comparison == "29-T1-chronic")$OTU))
-cat("Present only in T1 acute at 29ºC : ","\n", setdiff(subset(res_ALD, Comparison == "29-T1-acute")$OTU, subset(res_ALD, Comparison == "29-T1-chronic")$OTU))
-cat("Present only in T1 chronic at 29ºC : ","\n", setdiff(subset(res_ALD, Comparison == "29-T1-chronic")$OTU, subset(res_ALD, Comparison == "29-T1-acute")$OTU))
-
-### 32
-cat("Present in T1 acute and chronic at 32ºC : ","\n", intersect(subset(res_ALD, Comparison == "32-T1-acute")$OTU, subset(res_ALD, Comparison == "32-T1-chronic")$OTU))
-cat("Present only in T1 acute at 32ºC : ","\n", setdiff(subset(res_ALD, Comparison == "32-T1-acute")$OTU, subset(res_ALD, Comparison == "32-T1-chronic")$OTU))
-cat("Present only in T1 chronic at 32ºC : ","\n", setdiff(subset(res_ALD, Comparison == "32-T1-chronic")$OTU, subset(res_ALD, Comparison == "32-T1-acute")$OTU))
-
-### 34
-cat("Present in T1 acute and chronic at 34ºC : ","\n", intersect(subset(res_ALD, Comparison == "34-T1-acute")$OTU, subset(res_ALD, Comparison == "34-T1-chronic")$OTU))
-cat("Present only in T1 acute at 34ºC : ","\n", setdiff(subset(res_ALD, Comparison == "34-T1-acute")$OTU, subset(res_ALD, Comparison == "34-T1-chronic")$OTU))
-cat("Present only in T1 chronic at 34ºC : ","\n", setdiff(subset(res_ALD, Comparison == "34-T1-chronic")$OTU, subset(res_ALD, Comparison == "34-T1-acute")$OTU))

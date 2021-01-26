@@ -9,7 +9,7 @@ setwd("~/Documents/Bioinformatics_scripts/R_scripts/VTK_2021/")
 ### ### ### ### ###  
 
 cat("Reading files")
-path <- "."
+path <- "fastq/"
 list.files(path) # prints file names
 
 # Forward and reverse fastq filenames have format: SAMPLENAME_R1_001.fastq and SAMPLENAME_R2_001.fastq

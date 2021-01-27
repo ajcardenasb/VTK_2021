@@ -1,0 +1,58 @@
+library(ANCOMBC)
+library(phyloseq)
+library(reshape2)
+library(ggplot2)
+library(compositions)
+library(pheatmap)
+setwd("~/Documents/Bioinformatics_scripts/R_scripts/VTK_2021/")
+
+### 1. create your phyloseq object (hint: see yesterday's script)
+
+#27 vs 29
+C1=subset_samples(phy.all,???????) ### add here the logical expression to subset only the factors you want
+res1=ancombc(phyloseq=C1,formula="Temperature",p_adj_method = "fdr",zero_cut = 0.9,lib_cut=1000,group = "Temperature",struc_zero =TRUE,neg_lb = FALSE,tol = 1e-05,max_iter = 100,conserve = F,alpha = 0.05,global = TRUE)
+res1_df=data.frame(Beta=res1[["res"]][["beta"]], Beta_se=res1[["res"]][["se"]], W=res1[["res"]][["W"]],pval=res1[["res"]][["p_val"]], qval=res1[["res"]][["q_val"]],DA=res1[["res"]][["diff_abn"]])
+colnames(res1_df)=c(	"Beta",	"se", "W",	"pval",	"qval", "Diff_abundant")
+res1_sig=subset(res1_df, Diff_abundant == "TRUE")
+res1_sig$Diff_more_abundant=ifelse( res1_sig$W < 0 , "27", "29")
+res1_sig$Taxa=paste(rownames(tax), " (",tax$Genus,";", tax$Family, ";",tax$Order, ") " , sep = "" )[match(rownames(res1_sig),rownames(tax))]
+res1_sig$Comparison="Comparison 1: 27 vs 29"
+message("Number of DA ASVs: ", ????, "\nNumber of DA ASVs enriched in 27: ", ????), "\nNumber of DA ASVs enriched in 29: ", ????)
+
+#27 vs 32
+
+#27 vs 34
+
+#29 vs 32
+
+#29 vs 34
+
+#32 vs 34
+
+## plots
+
+ANCOMresults=rbind(res1_sig,res2_sig,res3_sig ,res4_sig,res5_sig,res6_sig)
+#write.table(ANCOMresults,  "outputs/ANCOMBC_ASVs_results.txt", sep = "\t", quote = F, row.names = T )
+
+ANCOMresults_plot=ANCOMresults %>% group_by(Diff_more_abundant, Comparison) %>% tally()
+ANCOMresults_plot$n=ifelse(ANCOMresults_plot$Comparison == "Comparison 1: 27 vs 29" & ANCOMresults_plot$Diff_more_abundant == "27", ANCOMresults_plot$n*-1, ANCOMresults_plot$n*1)
+ANCOMresults_plot$n=ifelse(ANCOMresults_plot$Comparison == "Comparison 2: 27 vs 32" & ANCOMresults_plot$Diff_more_abundant == "27", ANCOMresults_plot$n*-1, ANCOMresults_plot$n*1)
+ANCOMresults_plot$n=ifelse(ANCOMresults_plot$Comparison == "Comparison 3: 27 vs 34" & ANCOMresults_plot$Diff_more_abundant == "27", ANCOMresults_plot$n*-1, ANCOMresults_plot$n*1)
+ANCOMresults_plot$n=ifelse(ANCOMresults_plot$Comparison == "Comparison 4: 29 vs 32" & ANCOMresults_plot$Diff_more_abundant == "29", ANCOMresults_plot$n*-1, ANCOMresults_plot$n*1)
+ANCOMresults_plot$n=ifelse(ANCOMresults_plot$Comparison == "Comparison 5: 29 vs 34" & ANCOMresults_plot$Diff_more_abundant == "29", ANCOMresults_plot$n*-1, ANCOMresults_plot$n*1)
+ANCOMresults_plot$n=ifelse(ANCOMresults_plot$Comparison == "Comparison 6: 32 vs 34" & ANCOMresults_plot$Diff_more_abundant == "32", ANCOMresults_plot$n*-1, ANCOMresults_plot$n*1)
+
+#pdf("./outputs/ANCOMBC_DA_barplots.pdf", width=6,height=4, pointsize = 12)
+ggplot(data=ANCOMresults_plot, aes(x=Comparison, y=n)) + geom_bar(stat="identity", position = "dodge")  + geom_text(aes(label=n), vjust=0.5, color="white", position = position_dodge(1), size=3) +  theme_classic() + theme(axis.text.x=element_text(angle=90,hjust=1)) 
+#dev.off()
+
+#heat maps
+asv_clr=apply(asv,2,clr)
+colnames(asv_clr)=paste(map$Temperature, map$Genotype, sep = "_")[match(colnames(asv_clr), rownames(map))]
+asv_clr_sorted=asv_clr[,c(??????)] ## sort samples by treatment
+labels=paste(?????????)[match(rownames(asv_clr_sorted),rownames(tax))] ### in the function paste() fill with the taxonomic information you want to show on the heatmap
+#pdf("outputs/ANCOM_results_phenotype_part10_xenobio.pdf", width = 10, height = 5, pointsize = 12)
+pheatmap(asv_clr_sorted, color = colorRampPalette(c("navy", "white", "firebrick3"))(50),  cellwidth = 7, labels_row = labels, cellheight =  7, fontsize_row = 6, fontsize_col= 8, legend = T, gaps_col = c(5,10,15),  cluster_rows = T,cluster_col = F, scale = "row", clustering_method = "centroid")#ward.D2", "single", "complete", "average" (= UPGMA), "mcquitty" (= WPGMA), "median" (= WPGMC) or "centroid" (= UPGMC).
+#dev.off()
+
+#### make the heatmap only with differentially abundant ASVs with effect factor larger than 5 or lower -5 from the ANCOMresults table to select the most constasting ASVs

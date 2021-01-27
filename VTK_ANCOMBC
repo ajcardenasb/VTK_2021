@@ -34,6 +34,10 @@ message("Number of DA ASVs: ", ????, "\nNumber of DA ASVs enriched in 27: ", ???
 ANCOMresults=rbind(res1_sig,res2_sig,res3_sig ,res4_sig,res5_sig,res6_sig)
 #write.table(ANCOMresults,  "outputs/ANCOMBC_ASVs_results.txt", sep = "\t", quote = F, row.names = T )
 
+# assigment: find taxonomic patterns of diff. abundant ASVs across the diff. temperatures.
+
+
+
 ANCOMresults_plot=ANCOMresults %>% group_by(Diff_more_abundant, Comparison) %>% tally()
 ANCOMresults_plot$n=ifelse(ANCOMresults_plot$Comparison == "Comparison 1: 27 vs 29" & ANCOMresults_plot$Diff_more_abundant == "27", ANCOMresults_plot$n*-1, ANCOMresults_plot$n*1)
 ANCOMresults_plot$n=ifelse(ANCOMresults_plot$Comparison == "Comparison 2: 27 vs 32" & ANCOMresults_plot$Diff_more_abundant == "27", ANCOMresults_plot$n*-1, ANCOMresults_plot$n*1)

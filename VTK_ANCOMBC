@@ -37,18 +37,7 @@ ANCOMresults=rbind(res1_sig,res2_sig,res3_sig ,res4_sig,res5_sig,res6_sig)
 # assigment: find taxonomic patterns of diff. abundant ASVs across the diff. temperatures.
 
 
-
-ANCOMresults_plot=ANCOMresults %>% group_by(Diff_more_abundant, Comparison) %>% tally()
-ANCOMresults_plot$n=ifelse(ANCOMresults_plot$Comparison == "Comparison 1: 27 vs 29" & ANCOMresults_plot$Diff_more_abundant == "27", ANCOMresults_plot$n*-1, ANCOMresults_plot$n*1)
-ANCOMresults_plot$n=ifelse(ANCOMresults_plot$Comparison == "Comparison 2: 27 vs 32" & ANCOMresults_plot$Diff_more_abundant == "27", ANCOMresults_plot$n*-1, ANCOMresults_plot$n*1)
-ANCOMresults_plot$n=ifelse(ANCOMresults_plot$Comparison == "Comparison 3: 27 vs 34" & ANCOMresults_plot$Diff_more_abundant == "27", ANCOMresults_plot$n*-1, ANCOMresults_plot$n*1)
-ANCOMresults_plot$n=ifelse(ANCOMresults_plot$Comparison == "Comparison 4: 29 vs 32" & ANCOMresults_plot$Diff_more_abundant == "29", ANCOMresults_plot$n*-1, ANCOMresults_plot$n*1)
-ANCOMresults_plot$n=ifelse(ANCOMresults_plot$Comparison == "Comparison 5: 29 vs 34" & ANCOMresults_plot$Diff_more_abundant == "29", ANCOMresults_plot$n*-1, ANCOMresults_plot$n*1)
-ANCOMresults_plot$n=ifelse(ANCOMresults_plot$Comparison == "Comparison 6: 32 vs 34" & ANCOMresults_plot$Diff_more_abundant == "32", ANCOMresults_plot$n*-1, ANCOMresults_plot$n*1)
-
-#pdf("./outputs/ANCOMBC_DA_barplots.pdf", width=6,height=4, pointsize = 12)
-ggplot(data=ANCOMresults_plot, aes(x=Comparison, y=n)) + geom_bar(stat="identity", position = "dodge")  + geom_text(aes(label=n), vjust=0.5, color="white", position = position_dodge(1), size=3) +  theme_classic() + theme(axis.text.x=element_text(angle=90,hjust=1)) 
-#dev.off()
+## make barplots with the number of differentially abundant taxa across comparisons
 
 #heat maps
 asv_clr=apply(asv,2,clr)

@@ -26,7 +26,7 @@ all.l=reshape2::melt(asv.gg, id.vars=c("Group.1"), variable.name = "Family", val
 colnames(all.l)=c("Family","Sample","Abundance")
 
 ## Add sample information
-all.l$Tempearature=map$Temperature[match(all.l$Sample, rownames(map))]
+all.l$Temperature=map$Temperature[match(all.l$Sample, rownames(map))]
 all.l$Genotype=map$Genotype[match(all.l$Sample, rownames(map))]
 
 ## Plot

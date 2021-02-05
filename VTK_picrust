@@ -16,5 +16,10 @@ pred=read.table("Input_files/picrust/pred_metagenome_unstrat.tsv", header = T, r
 
 #run ANCOM comparisons (3 comparisons: 27 vs 29, 27 vs 32 and 27 vs 34)
 
-#make 3 barplots of those differentially abundant L3 processes from each comparison to show their effect sizes (W statistic)
+#create Venn Diagram to display the intercept of L3 processes that are enriched at all temperatures, the ones athat are enriched at 32 and 34, and the ones enriched at 34 only.
+library(VennDiagram)
 
+#make 3 barplots of those differentially abundant L3 processes from each comparison to show their effect sizes (W statistic)
+#1.enriched at all temperatures
+#2.enriched at 32 and 34
+#3.enriched only at 34
